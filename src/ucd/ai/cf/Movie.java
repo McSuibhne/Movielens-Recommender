@@ -12,4 +12,13 @@ public class Movie {
 		this.id = id;
 	}
 
+	/** @return the numeric ID for the movie*/
+	public Integer getId() {
+		return id;
+	}
+
+	/**@return The title for the movie*/
+	public String getName() {
+		return name;
+	}
 }
