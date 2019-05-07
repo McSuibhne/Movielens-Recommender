@@ -15,6 +15,34 @@ import java.util.Set;
  */
 public class Profile {
 
+	/**Returns the a set of movies that are common between the two profiles.
+	 * @param other The other profile to compare
+	 * @return a set of Movie objects
+	 */
+	public Set<Movie> getCommonMovies(Profile other) {
+		Set<Movie> common = new HashSet<Movie>();
+		for (Rating r: getRatings()) {
+			if(other.hasRated(r.getMovie())) {
+				common.add(r.getMovie());
+			}
+		}
+		return common;
+	}
+
+	/**
+	 * This returns the set of Rating objects for this user
+	 * @return
+	 */
+	public Set<Rating> getRatings() {
+		//return new HashSet<Rating>(allRatingsMap.values());
+
+		Set<Movie> movies = allRatingsMap.keySet();
+		Set<Rating> ratings = new LinkedHashSet<Rating>();
+		for (Movie m: movies)
+			ratings.add(allRatingsMap.get(m));
+
+		return ratings;
+	}
 
 	/**
 	 * Returns the unique numeric id for this user
@@ -33,7 +61,7 @@ public class Profile {
 	}
 
 	/** Returns the Rating that this user has given for given movie
-	 * 
+	 *
 	 * @param movie The movie for which the rating is sought
 	 * @return the rating value for the movie
 	 */
@@ -45,6 +73,41 @@ public class Profile {
 		return rating.getRating();
 	}
 
+
+	/**
+	 * Returns a boolean indicating whether this user has rated a particular movie
+	 * @param movie The movie in question
+	 * @return true if the user has rated it, false otherwise
+	 */
+	public boolean hasRated(final Movie movie) {
+		return allRatingsMap.get(movie) != null;
+	}
+
+	/**
+	 * Returns the average rating that the user has made across all the movies in the profile
+	 * @return the mean rating over all the movies
+	 */
+	public double getMeanRating() {
+		double total = 0;
+		for (Rating r: allRatingsMap.values()){
+			total = total + r.getRating();
+		}
+		return (size() > 0) ? total /  size() : -1;
+	}
+
+
+	/**
+	 * Returns the standard deviation of ratings that the user has made across all the movies in the profile
+	 * @return the mean rating over all the movies
+	 */
+	public double getStdevRating() {
+		double mean = getMeanRating();
+		double sqErr = 0;
+		for (Rating r: allRatingsMap.values()){
+			sqErr += + Math.pow(mean - r.getRating(), 2);
+		}
+		return (size() > 1) ? Math.sqrt(sqErr) / (size() - 1) : 0;
+	}
 
 	private Integer userId;
 	private Map<Movie, Rating> allRatingsMap;//the actual ratings given
@@ -65,7 +128,53 @@ public class Profile {
 		return this.internalID;
 	}
 
+	/**split the profile into training and test sets.
+	 * The test set (targetRatingsMap) are removed from the profile
+	 * and ratings are predicted based on the training
+	 * set which is the remaining part of the profile (allRatingsMap)
+	 * @param targetPercentage
+	 */
+	protected void split(final double targetPercentage) {
+		int targetSize = (int)(allRatingsMap.size() * targetPercentage);
+		targetRatingsMap = new LinkedHashMap<Movie, Rating>(targetSize);
+		int count = 0;
 
+		Set<Rating> ratings = getRatings();
+		for(Iterator<Rating> it = ratings.iterator(); it.hasNext() && (count < targetSize);){
+			Rating r = (Rating)it.next();
+			targetRatingsMap.put(r.getMovie(), r);
+			allRatingsMap.remove(r.getMovie());
+			count++;
+		}
+	}
 
+	public List<Movie> getTargetMovieList(){
+		List<Movie> l = new ArrayList<Movie>(targetRatingsMap.size());
+		for(Rating rating: targetRatingsMap.values()) {
+			l.add(rating.getMovie());
+		}
+		return l;
+	}
+
+	public List<Movie> getMovieList(){
+		List<Movie> l = new ArrayList<Movie>(allRatingsMap.size());
+		for(Rating rating: allRatingsMap.values()) {
+			l.add(rating.getMovie());
+		}
+		return l;
+	}
+
+	/**get the rating for the movie
+	 * @param movie
+	 * @return
+	 */
+	public double getTargetRating(final Movie movie) {
+		Rating rating = targetRatingsMap.get(movie);
+		return rating.getRating();
+	}
+
+	protected void addRating(final Rating rating){
+		allRatingsMap.put(rating.getMovie(), rating);
+	}
 
 }
